@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: crm-estudos
+    runtime: python
+    plan: starter
+    buildCommand: "python -m py_compile server.py storage.py"
+    startCommand: "python server.py"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: STUDY_CRM_DATA_DIR
+        value: /var/data
+      - key: STUDY_CRM_ADMIN_CODE
+        sync: false
+    disk:
+      name: crm-estudos-data
+      mountPath: /var/data
+      sizeGB: 1

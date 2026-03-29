@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRM de Estudos</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-bg"></div>
+
+    <div id="login-screen" class="login-screen">
+      <section class="login-card">
+        <p class="eyebrow">CRM de Estudos</p>
+        <h1>Entre no seu painel de estudos.</h1>
+        <p class="hero-copy">Organize materias, tarefas e sessoes em um so lugar.</p>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-tab="login">Entrar</button>
+          <button class="auth-tab" data-auth-tab="register">Criar conta</button>
+        </div>
+        <div class="auth-panel active" data-auth-panel="login">
+          <form id="login-form" class="form">
+            <input name="name" placeholder="Seu nome" required />
+            <select name="role" required>
+              <option value="aluno">Aluno</option>
+              <option value="admin">Admin</option>
+            </select>
+            <input name="password" type="password" placeholder="Senha" required />
+            <button type="submit">Entrar</button>
+          </form>
+          <p id="login-error" class="error-text"></p>
+        </div>
+        <div class="auth-panel" data-auth-panel="register">
+          <form id="register-form" class="form">
+            <input name="name" placeholder="Seu nome" required />
+            <select name="role" id="register-role" required>
+              <option value="aluno">Aluno</option>
+              <option value="admin">Admin</option>
+            </select>
+            <input name="adminCode" id="admin-code-field" class="hidden" placeholder="Codigo de admin" />
+            <input name="password" type="password" placeholder="Crie uma senha" required />
+            <button type="submit">Criar conta</button>
+          </form>
+          <p id="register-error" class="error-text"></p>
+        </div>
+      </section>
+    </div>
+
+    <div id="app-shell" class="page-shell hidden">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">CRM de Estudos</p>
+          <h1>Planeje, acompanhe e revise em um so lugar.</h1>
+          <p class="hero-copy">Tudo ficou mais simples de navegar, registrar e acompanhar.</p>
+        </div>
+        <div class="hero-card">
+          <div class="row-between align-center">
+            <div>
+              <p>Conta conectada</p>
+              <strong id="user-name"></strong>
+            </div>
+            <div class="button-stack">
+              <button id="theme-toggle" class="ghost small">Modo escuro</button>
+              <button id="logout-button" class="ghost small">Sair</button>
+            </div>
+          </div>
+          <span id="user-role"></span>
+        </div>
+      </header>
+
+      <section class="stats" id="stats"></section>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-tab="overview">Visao geral</button>
+        <button class="tab" data-tab="subjects">Materias</button>
+        <button class="tab" data-tab="tasks">Tarefas</button>
+        <button class="tab" data-tab="sessions">Sessoes</button>
+        <button class="tab hidden" id="users-tab" data-tab="users">Pessoas</button>
+      </nav>
+
+      <main class="tab-panels">
+        <section class="tab-panel active" data-panel="overview">
+          <div class="overview-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Agenda de revisao</h2>
+                <p>As materias aparecem aqui com foco no que precisa de atencao.</p>
+              </div>
+              <div id="overview-subjects" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Tarefas em aberto</h2>
+                <p>Um resumo rapido para voce bater o olho e seguir o plano.</p>
+              </div>
+              <div id="overview-tasks" class="list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="subjects">
+          <div class="content-grid">
+            <section class="panel form-panel">
+              <div class="panel-head">
+                <h2 id="subject-form-title">Nova materia</h2>
+                <p>Cadastre ou edite uma materia do seu plano.</p>
+              </div>
+              <form id="subject-form" class="form">
+                <input type="hidden" name="id" />
+                <input name="name" placeholder="Materia" required />
+                <input name="goal" placeholder="Meta principal" required />
+                <select name="status" required>
+                  <option value="nao comecei">Nao comecei</option>
+                  <option value="estudando">Estudando</option>
+                  <option value="revisar">Revisar</option>
+                  <option value="concluido">Concluido</option>
+                </select>
+                <select name="priority" required>
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baixa">Baixa</option>
+                </select>
+                <input name="nextReview" type="date" required />
+                <input name="progress" type="number" min="0" max="100" placeholder="Progresso %" required />
+                <textarea name="notes" placeholder="Observacoes" required></textarea>
+                <div class="action-row">
+                  <button type="submit">Salvar materia</button>
+                  <button type="button" class="ghost hidden" id="subject-cancel">Cancelar edicao</button>
+                </div>
+                <p id="subject-error" class="error-text"></p>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Lista de materias</h2>
+                <p>Edite qualquer item sem perder o contexto do painel.</p>
+              </div>
+              <div id="subjects-list" class="list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="tasks">
+          <div class="content-grid">
+            <section class="panel form-panel">
+              <div class="panel-head">
+                <h2 id="task-form-title">Nova tarefa</h2>
+                <p>Organize exercicios, revisoes e entregas por materia.</p>
+              </div>
+              <form id="task-form" class="form">
+                <input type="hidden" name="id" />
+                <input name="title" placeholder="Tarefa" required />
+                <select name="subjectId" id="task-subject-select" required></select>
+                <select name="status" required>
+                  <option value="pendente">Pendente</option>
+                  <option value="fazendo">Fazendo</option>
+                  <option value="concluida">Concluida</option>
+                </select>
+                <input name="dueDate" type="date" required />
+                <div class="action-row">
+                  <button type="submit">Salvar tarefa</button>
+                  <button type="button" class="ghost hidden" id="task-cancel">Cancelar edicao</button>
+                </div>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Lista de tarefas</h2>
+                <p>Da para marcar, atualizar ou apagar o que ja foi criado.</p>
+              </div>
+              <div id="tasks-list" class="list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="sessions">
+          <div class="content-grid">
+            <section class="panel form-panel">
+              <div class="panel-head">
+                <h2 id="session-form-title">Nova sessao</h2>
+                <p>Registre o tempo estudado e um resumo do que aconteceu.</p>
+              </div>
+              <form id="session-form" class="form">
+                <input type="hidden" name="id" />
+                <select name="subjectId" id="session-subject-select" required></select>
+                <input name="date" type="date" required />
+                <input name="duration" type="number" min="15" step="15" placeholder="Duracao em minutos" required />
+                <textarea name="summary" placeholder="O que foi estudado?" required></textarea>
+                <div class="action-row">
+                  <button type="submit">Salvar sessao</button>
+                  <button type="button" class="ghost hidden" id="session-cancel">Cancelar edicao</button>
+                </div>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Historico de sessoes</h2>
+                <p>Um jeito simples de enxergar constancia e revisar o que foi feito.</p>
+              </div>
+              <div id="sessions-list" class="list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="users">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Pessoas cadastradas</h2>
+              <p>Area exclusiva para administradores.</p>
+            </div>
+            <div id="users-list" class="list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="subject-template">
+      <article class="card subject-card">
+        <div class="row-between">
+          <div>
+            <h3></h3>
+            <p class="muted goal"></p>
+          </div>
+          <div class="button-stack">
+            <button class="small edit-button">Editar</button>
+            <button class="danger small delete-button">Excluir</button>
+          </div>
+        </div>
+        <div class="badges"></div>
+        <p class="notes"></p>
+        <div class="progress-line">
+          <div class="progress-fill"></div>
+        </div>
+        <small class="review-date"></small>
+      </article>
+    </template>
+
+    <template id="task-template">
+      <article class="card">
+        <div class="row-between">
+          <div>
+            <h3></h3>
+            <p class="muted meta"></p>
+          </div>
+          <div class="button-stack">
+            <button class="small edit-button">Editar</button>
+            <button class="danger small delete-button">Excluir</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <template id="session-template">
+      <article class="card">
+        <div class="row-between">
+          <div>
+            <h3></h3>
+            <p class="muted meta"></p>
+          </div>
+          <div class="button-stack">
+            <button class="small edit-button">Editar</button>
+            <button class="danger small delete-button">Excluir</button>
+          </div>
+        </div>
+        <p class="summary"></p>
+      </article>
+    </template>
+
+    <template id="user-template">
+      <article class="card">
+        <div class="row-between">
+          <div>
+            <h3></h3>
+            <p class="muted meta"></p>
+          </div>
+          <span class="badge role-badge"></span>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
