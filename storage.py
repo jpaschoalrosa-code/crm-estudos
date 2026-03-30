@@ -12,36 +12,6 @@ DATA_DIR = Path(os.environ.get("STUDY_CRM_DATA_DIR", str(BASE_DIR / "data")))
 DB_FILE = DATA_DIR / "study_crm.db"
 LEGACY_JSON_FILE = DATA_DIR / "study_crm.json"
 ADMIN_CODE_FILE = DATA_DIR / "admin_access_code.txt"
-DEFAULT_USER = {"username": "admin", "password": "estudo123", "name": "Aluno"}
-DEFAULT_DATA = {
-    "subjects": [
-        {
-            "name": "Matematica",
-            "goal": "Revisar fundamentos e avancar em algebra.",
-            "status": "estudando",
-            "priority": "alta",
-            "nextReview": "2026-03-31",
-            "progress": 35,
-            "notes": "Focar em exercicios de funcao e equacao.",
-        },
-        {
-            "name": "Historia",
-            "goal": "Concluir Brasil Republica.",
-            "status": "revisar",
-            "priority": "media",
-            "nextReview": "2026-04-02",
-            "progress": 60,
-            "notes": "Montar linha do tempo para fixacao.",
-        },
-    ],
-    "tasks": [
-        {"title": "Lista de equacoes do 2 grau", "subject_index": 0, "status": "fazendo", "dueDate": "2026-03-30"},
-        {"title": "Resumo Era Vargas", "subject_index": 1, "status": "pendente", "dueDate": "2026-04-01"},
-    ],
-    "sessions": [
-        {"subject_index": 0, "date": "2026-03-28", "duration": 90, "summary": "Resolvi exercicios e revisei formulas."}
-    ],
-}
 DELETE_ERRORS = {"subjects": "Materia nao encontrada.", "tasks": "Tarefa nao encontrada.", "sessions": "Sessao nao encontrada."}
 
 
@@ -156,45 +126,28 @@ def migrate_initial_data():
     with get_db() as connection:
         if connection.execute("SELECT COUNT(*) FROM users").fetchone()[0]:
             return
-        username = DEFAULT_USER["username"]
-        name = DEFAULT_USER["name"]
-        password = DEFAULT_USER["password"]
-        if legacy and legacy.get("users"):
-            username = legacy["users"][0].get("username", username)
-            name = legacy["users"][0].get("name", name)
-            password = legacy["users"][0].get("password", password)
-        cursor = connection.execute(
-            "INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)",
-            (username, hash_password(password), name, "admin", datetime.now().isoformat(timespec="seconds")),
-        )
-        user_id = cursor.lastrowid
         if legacy and legacy.get("subjects") is not None:
-            seed_from_legacy(connection, user_id, legacy)
-        else:
-            seed_defaults(connection, user_id)
+            migrate_legacy_users_and_data(connection, legacy)
 
+def migrate_legacy_users_and_data(connection, legacy):
+    legacy_users = legacy.get("users") or []
+    if not legacy_users:
+        return
 
-def seed_defaults(connection, user_id):
-    subject_ids = []
-    for subject in DEFAULT_DATA["subjects"]:
-        cursor = connection.execute(
-            "INSERT INTO subjects (user_id, name, goal, status, priority, next_review, progress, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, subject["name"], subject["goal"], subject["status"], subject["priority"], subject["nextReview"], subject["progress"], subject["notes"]),
-        )
-        subject_ids.append(cursor.lastrowid)
-    for task in DEFAULT_DATA["tasks"]:
-        connection.execute(
-            "INSERT INTO tasks (user_id, subject_id, title, status, due_date) VALUES (?, ?, ?, ?, ?)",
-            (user_id, subject_ids[task["subject_index"]], task["title"], task["status"], task["dueDate"]),
-        )
-    for session in DEFAULT_DATA["sessions"]:
-        connection.execute(
-            "INSERT INTO sessions (user_id, subject_id, date, duration, summary) VALUES (?, ?, ?, ?, ?)",
-            (user_id, subject_ids[session["subject_index"]], session["date"], session["duration"], session["summary"]),
-        )
+    primary = legacy_users[0]
+    primary_role = "admin" if primary.get("username") == "admin" else "aluno"
+    cursor = connection.execute(
+        "INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)",
+        (
+            primary.get("username", f"{primary_role}_{secrets.token_hex(3)}"),
+            hash_password(primary.get("password", "123456")),
+            primary.get("name", "Conta importada"),
+            primary_role,
+            datetime.now().isoformat(timespec="seconds"),
+        ),
+    )
+    user_id = cursor.lastrowid
 
-
-def seed_from_legacy(connection, user_id, legacy):
     subject_map = {}
     for subject in legacy.get("subjects", []):
         cursor = connection.execute(
@@ -316,6 +269,30 @@ def get_users_list():
             ORDER BY CASE WHEN u.role = 'admin' THEN 0 ELSE 1 END, u.name
             """,
         )
+
+
+def get_user_profile(admin_id, target_user_id):
+    with get_db() as connection:
+        admin = fetch_one(connection, "SELECT id, role FROM users WHERE id = ?", (admin_id,))
+        if not admin or admin["role"] != "admin":
+            raise PermissionError("Acesso restrito ao admin.")
+        user = fetch_one(connection, "SELECT id, name, role, created_at AS createdAt FROM users WHERE id = ?", (target_user_id,))
+        if not user:
+            raise LookupError("Pessoa nao encontrada.")
+    dashboard = get_dashboard_data(target_user_id)
+    return {"user": user, **dashboard}
+
+
+def delete_user(admin_id, target_user_id):
+    with get_db() as connection:
+        admin = fetch_one(connection, "SELECT id, role FROM users WHERE id = ?", (admin_id,))
+        if not admin or admin["role"] != "admin":
+            raise PermissionError("Acesso restrito ao admin.")
+        if admin_id == target_user_id:
+            raise ValueError("Voce nao pode excluir a propria conta por aqui.")
+        deleted = connection.execute("DELETE FROM users WHERE id = ?", (target_user_id,)).rowcount
+    if not deleted:
+        raise LookupError("Pessoa nao encontrada.")
 
 
 def validate_subject_for_user(user_id, subject_id):

@@ -47,6 +47,7 @@ const elements = {
   overviewSubjects: document.querySelector("#overview-subjects"),
   overviewTasks: document.querySelector("#overview-tasks"),
   usersList: document.querySelector("#users-list"),
+  userProfile: document.querySelector("#user-profile"),
   activitySummary: document.querySelector("#activity-summary"),
   activityLine: document.querySelector("#activity-line"),
   activityFill: document.querySelector("#activity-fill"),
@@ -75,6 +76,7 @@ const elements = {
 
 let cache = { subjects: [], tasks: [], sessions: [], users: [] };
 let currentRole = "";
+let selectedUserProfileId = null;
 
 function formToJson(form) {
   const data = new FormData(form);
@@ -295,8 +297,61 @@ function renderUsers(users) {
     fragment.querySelector("h3").textContent = user.name;
     fragment.querySelector(".meta").textContent = `Criado em ${user.createdAt} | ${user.subjects} materias | ${user.tasks} tarefas | ${user.sessions} sessoes`;
     fragment.querySelector(".role-badge").textContent = user.role;
+    fragment.querySelector(".view-button").addEventListener("click", async () => {
+      selectedUserProfileId = user.id;
+      await loadUserProfile(user.id);
+      setActiveTab("users");
+    });
+    fragment.querySelector(".delete-button").addEventListener("click", async () => {
+      const confirmed = window.confirm(`Deseja mesmo excluir a conta de ${user.name}? Essa acao apaga os dados da pessoa.`);
+      if (!confirmed) return;
+      try {
+        await api.request(`/api/users/${user.id}`, { method: "DELETE" });
+        if (selectedUserProfileId === user.id) {
+          selectedUserProfileId = null;
+          elements.userProfile.innerHTML = `<div class="empty">Escolha uma pessoa para ver o perfil.</div>`;
+        }
+        await refresh();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
     elements.usersList.append(fragment);
   });
+}
+
+async function loadUserProfile(userId) {
+  try {
+    const profile = await api.get(`/api/users/${userId}`);
+    const profileSubjectName = (subjectId) => profile.subjects.find((subject) => subject.id === subjectId)?.name || "Materia";
+    elements.userProfile.innerHTML = `
+      <article class="card">
+        <h3>${profile.user.name}</h3>
+        <p class="muted">Cargo: ${profile.user.role} | Criado em ${profile.user.createdAt}</p>
+        <div class="badges">
+          <span class="badge">Materias: ${profile.summary.subjects}</span>
+          <span class="badge">Estudando: ${profile.summary.studying}</span>
+          <span class="badge">Revisar: ${profile.summary.review}</span>
+          <span class="badge">Tarefas concluidas: ${profile.summary.tasksDone}</span>
+          <span class="badge">Horas estudadas: ${profile.summary.hoursStudied}</span>
+        </div>
+      </article>
+      <article class="card">
+        <h3>Materias recentes</h3>
+        ${profile.subjects.length ? profile.subjects.slice(0, 5).map((subject) => `<p>${subject.name} | ${subject.status} | ${subject.progress}%</p>`).join("") : '<p class="muted">Sem materias cadastradas.</p>'}
+      </article>
+      <article class="card">
+        <h3>Tarefas recentes</h3>
+        ${profile.tasks.length ? profile.tasks.slice(0, 5).map((task) => `<p>${task.title} | ${task.status} | ${task.dueDate}</p>`).join("") : '<p class="muted">Sem tarefas cadastradas.</p>'}
+      </article>
+      <article class="card">
+        <h3>Sessoes recentes</h3>
+        ${profile.sessions.length ? profile.sessions.slice(0, 5).map((session) => `<p>${session.date} | ${session.duration} min | ${profileSubjectName(session.subjectId)}</p>`).join("") : '<p class="muted">Sem sessoes registradas.</p>'}
+      </article>
+    `;
+  } catch (error) {
+    elements.userProfile.innerHTML = `<div class="empty">${error.message}</div>`;
+  }
 }
 
 function renderSubjects(subjects) {
@@ -424,6 +479,9 @@ async function refresh() {
   renderTasks(cache.tasks);
   renderSessions(cache.sessions);
   renderUsers(cache.users);
+  if (currentRole === "admin" && selectedUserProfileId) {
+    await loadUserProfile(selectedUserProfileId);
+  }
   fillSelect(elements.taskSubjectSelect, cache.subjects, elements.taskForm.elements.subjectId.value);
   fillSelect(elements.sessionSubjectSelect, cache.subjects, elements.sessionForm.elements.subjectId.value);
 }

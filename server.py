@@ -10,9 +10,11 @@ from urllib.parse import parse_qs, urlparse
 from storage import (
     DB_FILE,
     delete_by_id,
+    delete_user,
     get_dashboard_data,
     get_sessions,
     get_user_by_id,
+    get_user_profile,
     get_users_list,
     get_subjects,
     get_tasks,
@@ -109,6 +111,17 @@ class StudyCRMHandler(BaseHTTPRequestHandler):
                     return
                 json_response(self, HTTPStatus.OK, get_users_list())
                 return
+            if parsed.path.startswith("/api/users/"):
+                if user["role"] != "admin":
+                    json_response(self, HTTPStatus.FORBIDDEN, {"error": "Acesso restrito ao admin."})
+                    return
+                try:
+                    json_response(self, HTTPStatus.OK, get_user_profile(user["id"], self.extract_id(parsed.path)))
+                except LookupError as error:
+                    json_response(self, HTTPStatus.NOT_FOUND, {"error": str(error)})
+                except PermissionError as error:
+                    json_response(self, HTTPStatus.FORBIDDEN, {"error": str(error)})
+                return
             json_response(self, HTTPStatus.NOT_FOUND, {"error": "Rota nao encontrada."})
             return
         self.serve_static(parsed.path)
@@ -188,7 +201,9 @@ class StudyCRMHandler(BaseHTTPRequestHandler):
             return
         item_id = self.extract_id(parsed.path)
         try:
-            if parsed.path.startswith("/api/subjects/"):
+            if parsed.path.startswith("/api/users/"):
+                delete_user(user["id"], item_id)
+            elif parsed.path.startswith("/api/subjects/"):
                 delete_by_id("subjects", user["id"], item_id)
             elif parsed.path.startswith("/api/tasks/"):
                 delete_by_id("tasks", user["id"], item_id)
@@ -199,6 +214,12 @@ class StudyCRMHandler(BaseHTTPRequestHandler):
                 return
         except LookupError as error:
             json_response(self, HTTPStatus.NOT_FOUND, {"error": str(error)})
+            return
+        except PermissionError as error:
+            json_response(self, HTTPStatus.FORBIDDEN, {"error": str(error)})
+            return
+        except ValueError as error:
+            json_response(self, HTTPStatus.BAD_REQUEST, {"error": str(error)})
             return
         json_response(self, HTTPStatus.OK, {"deleted": item_id})
 

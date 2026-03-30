@@ -223,13 +223,24 @@
           </section>
 
           <section class="tab-panel" data-panel="users">
-            <section class="panel">
-              <div class="panel-head">
-                <h2>Pessoas cadastradas</h2>
-                <p>Area exclusiva para administradores.</p>
-              </div>
-              <div id="users-list" class="list"></div>
-            </section>
+            <div class="content-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Pessoas cadastradas</h2>
+                  <p>Area exclusiva para administradores.</p>
+                </div>
+                <div id="users-list" class="list"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Perfil da pessoa</h2>
+                  <p>Veja o resumo da conta selecionada.</p>
+                </div>
+                <div id="user-profile" class="list">
+                  <div class="empty">Escolha uma pessoa para ver o perfil.</div>
+                </div>
+              </section>
+            </div>
           </section>
         </main>
       </div>
@@ -294,7 +305,11 @@
             <h3></h3>
             <p class="muted meta"></p>
           </div>
-          <span class="badge role-badge"></span>
+          <div class="button-stack">
+            <span class="badge role-badge"></span>
+            <button class="small view-button">Ver perfil</button>
+            <button class="danger small delete-button">Excluir</button>
+          </div>
         </div>
       </article>
     </template>
