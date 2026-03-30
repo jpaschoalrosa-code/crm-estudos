@@ -47,6 +47,11 @@ const elements = {
   overviewSubjects: document.querySelector("#overview-subjects"),
   overviewTasks: document.querySelector("#overview-tasks"),
   usersList: document.querySelector("#users-list"),
+  activitySummary: document.querySelector("#activity-summary"),
+  activityLine: document.querySelector("#activity-line"),
+  activityFill: document.querySelector("#activity-fill"),
+  activityPoints: document.querySelector("#activity-points"),
+  axisLabels: document.querySelector("#axis-labels"),
   subjectForm: document.querySelector("#subject-form"),
   taskForm: document.querySelector("#task-form"),
   sessionForm: document.querySelector("#session-form"),
@@ -178,6 +183,63 @@ function renderStats(summary) {
     card.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
     elements.stats.append(card);
   });
+}
+
+function formatShortDay(dateString) {
+  const date = new Date(`${dateString}T12:00:00`);
+  return date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+}
+
+function buildActivitySeries() {
+  const today = new Date();
+  const series = [];
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - offset);
+    const key = date.toISOString().slice(0, 10);
+    const minutes = cache.sessions
+      .filter((session) => session.date === key)
+      .reduce((sum, session) => sum + Number(session.duration || 0), 0);
+    series.push({ key, label: formatShortDay(key), minutes });
+  }
+  return series;
+}
+
+function renderActivityChart() {
+  const series = buildActivitySeries();
+  const maxMinutes = Math.max(...series.map((item) => item.minutes), 60);
+  const width = 640;
+  const height = 300;
+  const left = 18;
+  const bottom = 24;
+  const chartWidth = width - left * 2;
+  const chartHeight = height - bottom - 18;
+  const step = chartWidth / Math.max(series.length - 1, 1);
+
+  const points = series.map((item, index) => {
+    const x = left + step * index;
+    const y = 18 + chartHeight - (item.minutes / maxMinutes) * chartHeight;
+    return { ...item, x, y };
+  });
+
+  const linePath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+
+  const fillPath = `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${(18 + chartHeight).toFixed(2)} L ${points[0].x.toFixed(2)} ${(18 + chartHeight).toFixed(2)} Z`;
+
+  elements.activityLine.setAttribute("d", linePath);
+  elements.activityFill.setAttribute("d", fillPath);
+  elements.activityPoints.innerHTML = points
+    .map(
+      (point) =>
+        `<circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.5"></circle><text x="${point.x.toFixed(2)}" y="${(point.y - 10).toFixed(2)}">${point.minutes}</text>`
+    )
+    .join("");
+
+  elements.axisLabels.innerHTML = series.map((item) => `<span>${item.label}</span>`).join("");
+  const totalMinutes = series.reduce((sum, item) => sum + item.minutes, 0);
+  elements.activitySummary.textContent = `Minutos estudados nos ultimos 7 dias: ${totalMinutes} min`;
 }
 
 function renderOverview() {
@@ -356,6 +418,7 @@ async function refresh() {
     users: cache.users,
   };
   renderStats(dashboard.summary);
+  renderActivityChart();
   renderOverview();
   renderSubjects(cache.subjects);
   renderTasks(cache.tasks);

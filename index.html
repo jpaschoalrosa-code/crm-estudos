@@ -47,171 +47,192 @@
     </div>
 
     <div id="app-shell" class="page-shell hidden">
-      <header class="hero">
-        <div>
+      <aside class="sidebar-shell">
+        <div class="brand-block">
           <p class="eyebrow">CRM de Estudos</p>
-          <h1>Planeje, acompanhe e revise em um so lugar.</h1>
-          <p class="hero-copy">Tudo ficou mais simples de navegar, registrar e acompanhar.</p>
+          <h2>Study Flow</h2>
         </div>
-        <div class="hero-card">
-          <div class="row-between align-center">
-            <div>
-              <p>Conta conectada</p>
-              <strong id="user-name"></strong>
-            </div>
-            <div class="button-stack">
-              <button id="theme-toggle" class="ghost small">Modo escuro</button>
-              <button id="logout-button" class="ghost small">Sair</button>
-            </div>
+
+        <section class="profile-card">
+          <div class="avatar-circle">P</div>
+          <div>
+            <p class="muted">Bem-vindo</p>
+            <strong id="user-name"></strong>
+            <span id="user-role"></span>
           </div>
-          <span id="user-role"></span>
+        </section>
+
+        <nav class="tabs" id="tabs">
+          <button class="tab active" data-tab="overview">Visao geral</button>
+          <button class="tab" data-tab="subjects">Materias</button>
+          <button class="tab" data-tab="tasks">Tarefas</button>
+          <button class="tab" data-tab="sessions">Sessoes</button>
+          <button class="tab hidden" id="users-tab" data-tab="users">Pessoas</button>
+        </nav>
+
+        <div class="sidebar-actions">
+          <button id="theme-toggle" class="ghost">Modo escuro</button>
+          <button id="logout-button" class="ghost">Sair</button>
         </div>
-      </header>
+      </aside>
 
-      <section class="stats" id="stats"></section>
-
-      <nav class="tabs" id="tabs">
-        <button class="tab active" data-tab="overview">Visao geral</button>
-        <button class="tab" data-tab="subjects">Materias</button>
-        <button class="tab" data-tab="tasks">Tarefas</button>
-        <button class="tab" data-tab="sessions">Sessoes</button>
-        <button class="tab hidden" id="users-tab" data-tab="users">Pessoas</button>
-      </nav>
-
-      <main class="tab-panels">
-        <section class="tab-panel active" data-panel="overview">
-          <div class="overview-grid">
-            <section class="panel">
-              <div class="panel-head">
-                <h2>Agenda de revisao</h2>
-                <p>As materias aparecem aqui com foco no que precisa de atencao.</p>
-              </div>
-              <div id="overview-subjects" class="list"></div>
-            </section>
-            <section class="panel">
-              <div class="panel-head">
-                <h2>Tarefas em aberto</h2>
-                <p>Um resumo rapido para voce bater o olho e seguir o plano.</p>
-              </div>
-              <div id="overview-tasks" class="list"></div>
-            </section>
+      <div class="main-shell">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Painel</p>
+            <h1>Organize seu estudo com clareza.</h1>
           </div>
-        </section>
+          <div class="topbar-note">
+            <span>Rotina</span>
+            <strong>Plano, revisao e progresso em um painel unico.</strong>
+          </div>
+        </header>
 
-        <section class="tab-panel" data-panel="subjects">
-          <div class="content-grid">
-            <section class="panel form-panel">
-              <div class="panel-head">
-                <h2 id="subject-form-title">Nova materia</h2>
-                <p>Cadastre ou edite uma materia do seu plano.</p>
-              </div>
-              <form id="subject-form" class="form">
-                <input type="hidden" name="id" />
-                <input name="name" placeholder="Materia" required />
-                <input name="goal" placeholder="Meta principal" required />
-                <select name="status" required>
-                  <option value="nao comecei">Nao comecei</option>
-                  <option value="estudando">Estudando</option>
-                  <option value="revisar">Revisar</option>
-                  <option value="concluido">Concluido</option>
-                </select>
-                <select name="priority" required>
-                  <option value="alta">Alta</option>
-                  <option value="media">Media</option>
-                  <option value="baixa">Baixa</option>
-                </select>
-                <input name="nextReview" type="date" required />
-                <input name="progress" type="number" min="0" max="100" placeholder="Progresso %" required />
-                <textarea name="notes" placeholder="Observacoes" required></textarea>
-                <div class="action-row">
-                  <button type="submit">Salvar materia</button>
-                  <button type="button" class="ghost hidden" id="subject-cancel">Cancelar edicao</button>
+        <section class="stats" id="stats"></section>
+
+        <main class="tab-panels">
+          <section class="tab-panel active" data-panel="overview">
+            <div class="overview-grid">
+              <section class="panel chart-panel">
+                <div class="panel-head">
+                  <h2>Ritmo de estudos</h2>
+                  <p id="activity-summary">Minutos estudados nos ultimos 7 dias.</p>
                 </div>
-                <p id="subject-error" class="error-text"></p>
-              </form>
-            </section>
-            <section class="panel">
-              <div class="panel-head">
-                <h2>Lista de materias</h2>
-                <p>Edite qualquer item sem perder o contexto do painel.</p>
-              </div>
-              <div id="subjects-list" class="list"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="tab-panel" data-panel="tasks">
-          <div class="content-grid">
-            <section class="panel form-panel">
-              <div class="panel-head">
-                <h2 id="task-form-title">Nova tarefa</h2>
-                <p>Organize exercicios, revisoes e entregas por materia.</p>
-              </div>
-              <form id="task-form" class="form">
-                <input type="hidden" name="id" />
-                <input name="title" placeholder="Tarefa" required />
-                <select name="subjectId" id="task-subject-select" required></select>
-                <select name="status" required>
-                  <option value="pendente">Pendente</option>
-                  <option value="fazendo">Fazendo</option>
-                  <option value="concluida">Concluida</option>
-                </select>
-                <input name="dueDate" type="date" required />
-                <div class="action-row">
-                  <button type="submit">Salvar tarefa</button>
-                  <button type="button" class="ghost hidden" id="task-cancel">Cancelar edicao</button>
+                <div class="activity-visual">
+                  <svg id="activity-chart" class="activity-chart" viewBox="0 0 640 300" preserveAspectRatio="none" aria-label="Grafico de minutos estudados">
+                    <path id="activity-fill" class="activity-fill"></path>
+                    <path id="activity-line" class="activity-line"></path>
+                    <g id="activity-points"></g>
+                  </svg>
+                  <div id="axis-labels" class="axis-labels"></div>
                 </div>
-              </form>
-            </section>
-            <section class="panel">
-              <div class="panel-head">
-                <h2>Lista de tarefas</h2>
-                <p>Da para marcar, atualizar ou apagar o que ja foi criado.</p>
-              </div>
-              <div id="tasks-list" class="list"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="tab-panel" data-panel="sessions">
-          <div class="content-grid">
-            <section class="panel form-panel">
-              <div class="panel-head">
-                <h2 id="session-form-title">Nova sessao</h2>
-                <p>Registre o tempo estudado e um resumo do que aconteceu.</p>
-              </div>
-              <form id="session-form" class="form">
-                <input type="hidden" name="id" />
-                <select name="subjectId" id="session-subject-select" required></select>
-                <input name="date" type="date" required />
-                <input name="duration" type="number" min="15" step="15" placeholder="Duracao em minutos" required />
-                <textarea name="summary" placeholder="O que foi estudado?" required></textarea>
-                <div class="action-row">
-                  <button type="submit">Salvar sessao</button>
-                  <button type="button" class="ghost hidden" id="session-cancel">Cancelar edicao</button>
+              </section>
+              <section class="panel side-summary">
+                <div class="panel-head">
+                  <h2>Resumo rapido</h2>
+                  <p>O que merece atencao agora.</p>
                 </div>
-              </form>
-            </section>
-            <section class="panel">
-              <div class="panel-head">
-                <h2>Historico de sessoes</h2>
-                <p>Um jeito simples de enxergar constancia e revisar o que foi feito.</p>
-              </div>
-              <div id="sessions-list" class="list"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="tab-panel" data-panel="users">
-          <section class="panel">
-            <div class="panel-head">
-              <h2>Pessoas cadastradas</h2>
-              <p>Area exclusiva para administradores.</p>
+                <div id="overview-subjects" class="list compact-list"></div>
+                <div id="overview-tasks" class="list compact-list"></div>
+              </section>
             </div>
-            <div id="users-list" class="list"></div>
           </section>
-        </section>
-      </main>
+
+          <section class="tab-panel" data-panel="subjects">
+            <div class="content-grid">
+              <section class="panel form-panel">
+                <div class="panel-head">
+                  <h2 id="subject-form-title">Nova materia</h2>
+                  <p>Cadastre ou edite uma materia do seu plano.</p>
+                </div>
+                <form id="subject-form" class="form">
+                  <input type="hidden" name="id" />
+                  <input name="name" placeholder="Materia" required />
+                  <input name="goal" placeholder="Meta principal" required />
+                  <select name="status" required>
+                    <option value="nao comecei">Nao comecei</option>
+                    <option value="estudando">Estudando</option>
+                    <option value="revisar">Revisar</option>
+                    <option value="concluido">Concluido</option>
+                  </select>
+                  <select name="priority" required>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baixa">Baixa</option>
+                  </select>
+                  <input name="nextReview" type="date" required />
+                  <input name="progress" type="number" min="0" max="100" placeholder="Progresso %" required />
+                  <textarea name="notes" placeholder="Observacoes" required></textarea>
+                  <div class="action-row">
+                    <button type="submit">Salvar materia</button>
+                    <button type="button" class="ghost hidden" id="subject-cancel">Cancelar edicao</button>
+                  </div>
+                  <p id="subject-error" class="error-text"></p>
+                </form>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Lista de materias</h2>
+                  <p>Edite qualquer item sem perder o contexto do painel.</p>
+                </div>
+                <div id="subjects-list" class="list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="tasks">
+            <div class="content-grid">
+              <section class="panel form-panel">
+                <div class="panel-head">
+                  <h2 id="task-form-title">Nova tarefa</h2>
+                  <p>Organize exercicios, revisoes e entregas por materia.</p>
+                </div>
+                <form id="task-form" class="form">
+                  <input type="hidden" name="id" />
+                  <input name="title" placeholder="Tarefa" required />
+                  <select name="subjectId" id="task-subject-select" required></select>
+                  <select name="status" required>
+                    <option value="pendente">Pendente</option>
+                    <option value="fazendo">Fazendo</option>
+                    <option value="concluida">Concluida</option>
+                  </select>
+                  <input name="dueDate" type="date" required />
+                  <div class="action-row">
+                    <button type="submit">Salvar tarefa</button>
+                    <button type="button" class="ghost hidden" id="task-cancel">Cancelar edicao</button>
+                  </div>
+                </form>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Lista de tarefas</h2>
+                  <p>Da para marcar, atualizar ou apagar o que ja foi criado.</p>
+                </div>
+                <div id="tasks-list" class="list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="sessions">
+            <div class="content-grid">
+              <section class="panel form-panel">
+                <div class="panel-head">
+                  <h2 id="session-form-title">Nova sessao</h2>
+                  <p>Registre o tempo estudado e um resumo do que aconteceu.</p>
+                </div>
+                <form id="session-form" class="form">
+                  <input type="hidden" name="id" />
+                  <select name="subjectId" id="session-subject-select" required></select>
+                  <input name="date" type="date" required />
+                  <input name="duration" type="number" min="15" step="15" placeholder="Duracao em minutos" required />
+                  <textarea name="summary" placeholder="O que foi estudado?" required></textarea>
+                  <div class="action-row">
+                    <button type="submit">Salvar sessao</button>
+                    <button type="button" class="ghost hidden" id="session-cancel">Cancelar edicao</button>
+                  </div>
+                </form>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Historico de sessoes</h2>
+                  <p>Um jeito simples de enxergar constancia e revisar o que foi feito.</p>
+                </div>
+                <div id="sessions-list" class="list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="users">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Pessoas cadastradas</h2>
+                <p>Area exclusiva para administradores.</p>
+              </div>
+              <div id="users-list" class="list"></div>
+            </section>
+          </section>
+        </main>
+      </div>
     </div>
 
     <template id="subject-template">
